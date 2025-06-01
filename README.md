@@ -8,6 +8,32 @@ This guide is intended for folks with some technical knowledge. If you don't und
 
 _You are responsible for any and all outcomes from following these steps, including any loss of data and/or loss of function of your devices._
 
+# TL;DR
+
+(Please go through the rest of doc. Don't DR it)
+
+```
+adb shell
+```
+
+```
+sm set-force-adoptable on
+sm list-disks
+# should return something like: disk:179,0
+sm partition disk:179,0 mixed 10  # 10 is the 10% of portable storage
+sm list volumes
+sm format private:179,34
+sm mount private:179,34
+df -h
+reboot
+```
+
+Very importantly:
+1.  DO NOT format the whole card as private. Many devices' software hates it and behaves weird when it detects an SD card without an external/portable partition.
+2. `sm partition disk:179,0 mixed 10`: use the correct disk identifier from `sm list-disks`. The number here represent the ratio of the _first_ partition, which is usually the external/portable storage (which cannot be used to store apps). Contrary to instructions like [these](https://gist.github.com/mvidaldp/84926c3e6e0d980a9833d8dbee93f0c8) on the devices I tested, most have the external/portable/exFAT partition at the front of this ratio.
+3. `mixed 10`: also giving a very small percentage doesn't work. Your tablet/phone may refuse to continue if this ratio is too low. 10% reliably worked for me. Also, note that you likely cannot resize the partitions without losing all data, ideally you never run out of storage on both the external/portable storage and the internal/encrypted storage.
+4. `df -h` this shows actual disk usage stats. Verify the last couple of lines where you should see your new private storage on the SD card. Its total capacity should match that from `mixed 10` or whatever ratio you specified. If it does not (e.g., it has `1-ratio` of total capacity), go through `sm partition ...` again with different parameters.
+5. `reboot`: reboot your device and validate that it works properly, before adding more data to the card.
 
 # Prior art
 
@@ -35,4 +61,3 @@ data corruption.
 
 # Implications
 
-Generally
