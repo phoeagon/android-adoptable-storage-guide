@@ -101,6 +101,53 @@ adb shell
 mount
 ```
 
+## alternative pm based approach
+
+Alternatively you can find the UUID of the private partition to do this move:
+
+```
+sm list-volumes
+
+private:179,27 mounted e87c43f1-fefc-44d6-b6a4-e9d7cb8b1eac
+private mounted null
+emulated;0 unmounted null
+public:179,25 mounted 6FD7-EABE
+```
+
+Then check block ID: (optional, may require root)
+
+```
+# blkid /dev/block/dm-*                                               
+/dev/block/dm-14: UUID="e87c43f1-fefc-44d6-b6a4-e9d7cb8b1eac" TYPE="f2fs" 
+/dev/block/dm-50: UUID="f300cf04-38d9-49c6-89d3-f528a99b601f" TYPE="f2fs" 
+```
+
+(one is internal storage, the other is the `private:179,27`)
+
+Then, do this:
+
+```
+pm move-primary-storage e87c43f1-fefc-44d6-b6a4-e9d7cb8b1eac
+```
+
+------------------------------------------------------------------------
+
+# (Root only) extract encryption keys
+
+```
+ls /data/misc/vold/expand*.key
+od -t x1 /data/misc/vold/expand_8838e738a18746b6e435bb0d04c15ccd.key
+0000000 00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f
+0000020
+```
+
+This could be used like this:
+
+```
+dmsetup create crypt1 --table "0 `blockdev --getsize /dev/sdb2` crypt \
+aes-cbc-essiv:sha256 00010203040506070809010a0b0c0d0e0f 0 /dev/sdb2 0"
+```
+
 ------------------------------------------------------------------------
 
 # Prior Art
